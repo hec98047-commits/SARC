@@ -1,0 +1,14 @@
+# Versions below were import-checked in the release-preparation environment.
+torch==2.11.0
+torchvision==0.26.0
+transformers==5.5.3
+numpy==2.4.3
+scipy==1.16.3
+scikit-learn==1.7.2
+Pillow==12.1.1
+PyYAML==6.0.3
+opencv-python==4.13.0.92
+tqdm==4.67.1
+tifffile==2025.10.4
+safetensors==0.7.0
+huggingface-hub==1.10.1

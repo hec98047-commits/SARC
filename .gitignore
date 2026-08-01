@@ -1,0 +1,83 @@
+# Data and local datasets
+datasets/
+dataset/
+datasett/
+datasettt/
+data/
+visa/
+mvtec/
+
+# Models, checkpoints, and generated artifacts
+# Keep only the explicitly whitelisted model source/configuration files below.
+models/**
+!models/README.md
+!models/FGCLIP/
+!models/FGCLIP/config.json
+!models/FGCLIP/configuration_fgclip2.py
+!models/FGCLIP/modeling_fgclip2.py
+!models/FGCLIP/preprocessor_config.json
+!models/MGFGGCLIP/
+!models/MGFGGCLIP/__init__.py
+!models/MGFGGCLIP/config.json
+!models/MGFGGCLIP/configuration_fgclip2.py
+!models/MGFGGCLIP/modeling_fgclip2.py
+!models/MGFGGCLIP/preprocessor_config.json
+!models/MGFGGCLIP/vision_convnext.py
+checkpoints/
+weights/
+outputs/
+output/
+result/
+results/
+logs/
+runs/
+wandb/
+tensorboard/
+cache/
+.cache/
+.hf_cache/
+vector_db/
+release_package/
+
+# Python and environments
+__pycache__/
+**/__pycache__/
+*.py[cod]
+*.pkl
+*.pth
+*.pt
+*.ckpt
+*.onnx
+*.npz
+*.npy
+*.safetensors
+.venv/
+*.egg-info/
+
+# Secrets, editors, OS, and archives
+.env
+.env.*
+*.pem
+*.key
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*.zip
+*.rar
+*.7z
+
+# Local copies and unrelated bulky assets
+WinClip-master (1)/
+PromptAD/
+exports/
+fig/
+fig_assets/
+figure_assets/
+figures/
+notes/
+paper_conversion/
+tmp/
+models/torch_hub/
+*数据集*/
+*dataset*/
