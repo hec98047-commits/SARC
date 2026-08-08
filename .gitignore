@@ -1,34 +1,24 @@
-# Data and local datasets
-datasets/
-dataset/
-datasett/
-datasettt/
+# Datasets and local inputs
 data/
+dataset/
+datasets/
 visa/
 mvtec/
 
-# Models, checkpoints, and generated artifacts
-# Keep only the explicitly whitelisted model source/configuration files below.
-models/**
-!models/README.md
-!models/FGCLIP/
-!models/FGCLIP/config.json
-!models/FGCLIP/configuration_fgclip2.py
-!models/FGCLIP/modeling_fgclip2.py
-!models/FGCLIP/preprocessor_config.json
-!models/MGFGGCLIP/
-!models/MGFGGCLIP/__init__.py
-!models/MGFGGCLIP/config.json
-!models/MGFGGCLIP/configuration_fgclip2.py
-!models/MGFGGCLIP/modeling_fgclip2.py
-!models/MGFGGCLIP/preprocessor_config.json
-!models/MGFGGCLIP/vision_convnext.py
+# Model weights and checkpoints
+*.pt
+*.pth
+*.ckpt
+*.safetensors
+*.onnx
 checkpoints/
 weights/
+
+# Generated results and intermediate artifacts
 outputs/
 output/
-result/
 results/
+result/
 logs/
 runs/
 wandb/
@@ -36,25 +26,21 @@ tensorboard/
 cache/
 .cache/
 .hf_cache/
-vector_db/
-release_package/
+tmp/
+temp/
+*.npy
+*.npz
+*.pkl
 
-# Python and environments
+# Python environments and caches
 __pycache__/
 **/__pycache__/
 *.py[cod]
-*.pkl
-*.pth
-*.pt
-*.ckpt
-*.onnx
-*.npz
-*.npy
-*.safetensors
 .venv/
+venv/
 *.egg-info/
 
-# Secrets, editors, OS, and archives
+# Secrets, editors, operating-system files, and archives
 .env
 .env.*
 *.pem
@@ -66,18 +52,3 @@ Thumbs.db
 *.zip
 *.rar
 *.7z
-
-# Local copies and unrelated bulky assets
-WinClip-master (1)/
-PromptAD/
-exports/
-fig/
-fig_assets/
-figure_assets/
-figures/
-notes/
-paper_conversion/
-tmp/
-models/torch_hub/
-*数据集*/
-*dataset*/

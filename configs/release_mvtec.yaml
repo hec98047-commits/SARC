@@ -1,20 +1,20 @@
 dataset: mvtec
 data_root: /path/to/mvtec
 model_path: /path/to/FGCLIP
-mg_model_path: /path/to/MGFGGCLIP
-output_dir: outputs/fewshot_protocol/mvtec
+sarc_model_path: /path/to/SARC
+output_dir: outputs/sarc/mvtec
 shots_list: [1, 2, 4]
 seeds: [42]
-methods: [ours]
-modules: [A, B, C]
+methods: [sarc]
+stages: [SP, ARC, LEC]
 subset: all
 low_storage: true
-pgcre:
+sarc:
   tile_mode: 2x2
   overlap: 0.25
   lambda_weight: 0.5
   q: 0.8
   prompt_style: spatial_aware
-  token_modulator_checkpoint: checkpoints/{dataset}_{shot}shot_seed{seed}/ctm_epoch10_trained.pt
-  enable_nrd: true
-  nrd_ref_selection: fps
+  arc_checkpoint: checkpoints/{dataset}_{shot}shot_seed{seed}/arc_epoch10.pt
+  normal_reference_calibration: true
+  reference_selection: fps

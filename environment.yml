@@ -1,4 +1,4 @@
-name: pgcre-fgclip
+name: sarc
 channels:
   - pytorch
   - nvidia

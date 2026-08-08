@@ -1,155 +1,111 @@
-# PGCRE-FGCLIP
+# SARC
 
-**Few-shot tiny industrial defect localization using normal references only.**
+Official research code for **Semantic-Guided Anomaly Response Constraint for Few-Shot Localization of Tiny Industrial Defects with Frozen Vision-Language Models**.
 
-PGCRE-FGCLIP combines a frozen FG-CLIP backbone with cross-modal semantic alignment, candidate-guided local response decoupling, and local-detail compensation. The released protocol uses `K = 1, 2, 4` normal reference images per category with seed `42`; no anomalous training images or test masks are used for optimization.
+SARC uses only normal reference images and keeps the FG-CLIP backbone frozen. The public pipeline follows the three stages in the manuscript:
 
-> This repository contains source code only. Datasets, model weights, checkpoints, experiment outputs, logs, and caches are not distributed.
+- **SP — Semantic Prior Generation:** spatial-aware anomaly prompts, risk-aware prompt selection, and cross-modal semantic-prior generation.
+- **ARC — Anomaly Response Constraint:** prior-guided token modulation and attention-bias constraints in the visual Transformer.
+- **LEC — Local Evidence Calibration:** overlapping local inference, local/global fusion, and normal-reference residual calibration.
 
 ## Framework
 
 <p align="center">
-  <img src="assets/pgcre_fgclip_framework.png" width="100%" alt="Overall framework of PGCRE-FGCLIP">
+  <img src="assets/sarc_framework.png" width="100%" alt="SARC framework with SP, ARC, and LEC stages">
 </p>
-
-The method is organized into three modules:
-
-- **Module A — Cross-modal semantic alignment.** Spatial-aware prompts, low-risk prompt routing, and semantic candidate priors identify likely defect regions.
-- **Module B — Candidate-guided local response decoupling.** A shared lightweight CandidateTokenModulator is trained from normal references and applied to frozen visual Transformer layers 3–12. The accompanying attention bias is fixed and has no trainable parameters.
-- **Module C — Local-detail compensation.** Overlapping local inference, positive residual fusion, and normal-reference calibration recover weak defect evidence while suppressing false positives.
-
-Only the CandidateTokenModulator in Module B is trainable. The visual encoder, text encoder, attention layers, and the remaining modules stay frozen. Runtime messages use only `Module A`, `Module B`, and `Module C`, without manuscript section numbering.
 
 ## Installation
 
-Python 3.10 and a CUDA-enabled PyTorch build are recommended.
-
 ```bash
-git clone https://github.com/hec98047-commits/PGCRE-FGCLIP.git
-cd PGCRE-FGCLIP
+git clone https://github.com/hec98047-commits/SARC.git
+cd SARC
 conda env create -f environment.yml
-conda activate pgcre-fgclip
+conda activate sarc
 ```
 
-Alternatively:
+Alternatively, install the Python dependencies with `pip install -r requirements.txt`.
+
+The repository contains non-weight model source and configuration files only:
+
+- `models/FGCLIP/`: frozen FG-CLIP backbone definition;
+- `models/SARC/`: SARC model definition and ARC-enabled vision configuration.
+
+Provide pretrained weights and tokenizer files locally. Checkpoints, datasets, caches, logs, and generated outputs are excluded from Git.
+
+## Dataset protocol
+
+Prepare VisA or MVTec AD using their official layouts. For each category, SARC samples `K = 1, 2, 4` normal reference images with seed `42`. Anomalous training images and test masks are not used for optimization.
+
+Edit `configs/release_visa.yaml` or `configs/release_mvtec.yaml`, then run:
 
 ```bash
-pip install -r requirements.txt
+python src/sarc/run_sarc_protocol.py --config configs/release_visa.yaml
 ```
 
-## Data and checkpoints
-
-Download MVTec AD and VisA from their official sources. Keep datasets and checkpoints outside version control.
-
-```text
-/path/to/mvtec/
-  bottle/
-    train/good/*.png
-    test/good/*.png
-    test/<defect_type>/*.png
-    ground_truth/<defect_type>/*_mask.png
-
-/path/to/visa/
-  split_csv/1cls.csv
-  <category>/...
-```
-
-The repository includes the model source and configuration under `models/FGCLIP/` and `models/MGFGGCLIP/`, but not pretrained weights or tokenizer assets.
-
-## Train Module B
-
-First sample the normal references:
+Single-shot convenience scripts are also provided:
 
 ```bash
-python src/pgcre_fgclip/fewshot_sampler.py \
+bash scripts/run_visa_1shot.sh /path/to/visa /path/to/FGCLIP /path/to/SARC outputs/visa_1shot
+```
+
+At runtime, the method stages are reported only as `SP`, `ARC`, and `LEC`.
+
+## ARC training
+
+ARC contains the lightweight trainable token modulator; the FG-CLIP backbone remains frozen.
+
+```bash
+python src/sarc/train_arc.py \
   --dataset visa \
   --data_root /path/to/visa \
-  --shots 1 \
-  --seed 42 \
-  --output_path outputs/samples/visa_1shot_seed42.json
+  --sampled_normals outputs/samples/1shot/sampled_normal_paths.json \
+  --model_dir /path/to/SARC \
+  --output_dir checkpoints/visa_1shot_seed42
 ```
-
-Then train the normal-only CandidateTokenModulator:
-
-```bash
-python src/pgcre_fgclip/train_candidate_token_modulator.py \
-  --model_dir /path/to/MGFGGCLIP \
-  --sampled_normals outputs/samples/visa_1shot_seed42.json \
-  --output_dir checkpoints/visa_1shot_seed42 \
-  --epochs 10
-```
-
-Repeat with `--shots 2` and `--shots 4` when reproducing the corresponding protocols. The default release configuration resolves checkpoints as:
-
-```text
-checkpoints/{dataset}_{shot}shot_seed{seed}/ctm_epoch10_trained.pt
-```
-
-## Evaluation
-
-Edit the placeholder paths in `configs/release_visa.yaml` or override them from the command line:
-
-```bash
-python src/pgcre_fgclip/run_fewshot_protocol.py \
-  --config configs/release_visa.yaml \
-  --data_root /path/to/visa \
-  --model_path /path/to/FGCLIP \
-  --mg_model_path /path/to/MGFGGCLIP \
-  --output_dir outputs/visa
-```
-
-Use `configs/release_mvtec.yaml` for MVTec AD. P-AUROC and AU-PRO are written to `eval_metrics.json` and the summary CSV files. AU-PRO is implemented in `src/pgcre_fgclip/fgclip_ad/metrics.py` with an FPR integration limit of `0.3`.
 
 ## VisA results
 
-**Table B1. Category-level results of PGCRE-FGCLIP on VisA under the 1/2/4-shot protocols (%).**
+Pixel AUROC (P-AUROC) and region overlap (AU-PRO) are percentages.
 
-| Category | 1-shot P-AUROC | 1-shot AU-PRO | 2-shot P-AUROC | 2-shot AU-PRO | 4-shot P-AUROC | 4-shot AU-PRO |
+| Class | 1-shot P-AUROC | 1-shot AU-PRO | 2-shot P-AUROC | 2-shot AU-PRO | 4-shot P-AUROC | 4-shot AU-PRO |
 |---|---:|---:|---:|---:|---:|---:|
-| candle | 97.80 | 97.01 | 98.18 | 97.94 | 98.36 | 97.82 |
-| capsules | 96.40 | 89.90 | 96.38 | 90.44 | 95.73 | 89.61 |
-| cashew | 96.90 | 85.84 | 96.35 | 82.19 | 97.15 | 89.14 |
-| chewinggum | 99.22 | 87.77 | 99.22 | 88.15 | 99.50 | 89.27 |
-| fryum | 96.89 | 91.67 | 97.05 | 91.50 | 97.12 | 91.52 |
-| macaroni1 | 99.56 | 98.23 | 99.66 | 98.93 | 99.95 | 98.60 |
-| macaroni2 | 98.59 | 92.65 | 98.29 | 92.85 | 98.64 | 92.30 |
-| pcb1 | 98.88 | 85.02 | 98.82 | 83.00 | 99.20 | 87.36 |
-| pcb2 | 96.00 | 91.47 | 96.86 | 93.36 | 96.81 | 93.30 |
-| pcb3 | 94.10 | 89.43 | 94.81 | 91.43 | 94.76 | 92.56 |
-| pcb4 | 95.94 | 90.26 | 96.39 | 92.11 | 96.52 | 91.88 |
-| pipe_fryum | 99.45 | 89.32 | 99.56 | 90.22 | 99.70 | 90.71 |
-| **Average** | **97.48** | **90.71** | **97.63** | **91.01** | **97.79** | **92.01** |
+| candle | 97.86 | 97.12 | 98.18 | 97.94 | 98.36 | 97.82 |
+| capsules | 96.41 | 89.92 | 96.38 | 90.44 | 95.73 | 89.61 |
+| cashew | 96.89 | 85.88 | 96.35 | 82.19 | 97.15 | 89.14 |
+| chewinggum | 99.34 | 88.41 | 99.22 | 88.15 | 99.50 | 89.27 |
+| fryum | 96.89 | 91.70 | 97.05 | 91.50 | 97.12 | 91.52 |
+| macaroni1 | 99.47 | 97.98 | 99.66 | 98.93 | 99.95 | 98.60 |
+| macaroni2 | 98.47 | 92.09 | 98.29 | 92.85 | 98.64 | 92.30 |
+| pcb1 | 98.88 | 85.04 | 98.82 | 83.00 | 99.20 | 87.36 |
+| pcb2 | 96.16 | 91.33 | 96.86 | 93.36 | 96.81 | 93.30 |
+| pcb3 | 95.21 | 91.20 | 94.81 | 91.43 | 94.76 | 92.56 |
+| pcb4 | 95.94 | 89.71 | 96.39 | 92.11 | 96.52 | 91.88 |
+| pipe_fryum | 99.45 | 89.33 | 99.56 | 90.22 | 99.70 | 90.71 |
+| **Average** | **97.58** | **90.81** | **97.63** | **91.01** | **97.79** | **92.01** |
 
-### Qualitative comparison on VisA
+## Qualitative results
 
 <p align="center">
-  <img src="assets/qualitative_visa.png" width="100%" alt="Qualitative comparison on VisA">
+  <img src="assets/sarc_qualitative.png" width="100%" alt="Qualitative tiny-defect localization comparison">
 </p>
 
-The visualization compares the input image, ground-truth mask, WinCLIP, PromptAD, frozen FG-CLIP, and PGCRE-FGCLIP. It is provided as qualitative evidence and does not replace the quantitative evaluation protocol.
-
-## Repository structure
+## Repository layout
 
 ```text
-PGCRE-FGCLIP/
-├── assets/                         # framework and VisA visualization
-├── configs/                        # release configurations
-├── models/                         # FG-CLIP and MG-FGCLIP model source
-├── scripts/                        # 1/2/4-shot launchers
-└── src/pgcre_fgclip/               # training, evaluation, and method code
+SARC/
+├── assets/          # Paper framework and qualitative visualization
+├── configs/         # Release protocols
+├── models/          # FG-CLIP backbone and SARC model definitions
+├── scripts/         # 1/2/4-shot launchers
+├── src/sarc/        # SP, ARC, LEC implementation and evaluation
+├── .gitignore
+├── LICENSE
+├── README.md
+├── README_CN.md
+├── environment.yml
+└── requirements.txt
 ```
 
-## Citation
+## License
 
-Update the following entry after the final publication metadata is available:
-
-```bibtex
-@article{pgcre_fgclip,
-  title   = {PGCRE-FGCLIP},
-  author  = {Authors},
-  journal = {Manuscript},
-  year    = {2026}
-}
-```
-
-FG-CLIP, MVTec AD, VisA, and external checkpoints remain subject to their original licenses.
+This repository is released under the MIT License. Third-party datasets and pretrained models retain their original licenses.

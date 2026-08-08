@@ -1,12 +1,6 @@
-# Model source files
+# Model definitions
 
-This directory contains only the FG-CLIP and MG-FGCLIP Python model implementations and their non-weight configuration files used by PGCRE-FGCLIP.
+- `FGCLIP/` contains the frozen FG-CLIP backbone definition.
+- `SARC/` contains the paper-aligned SARC model definition and ARC-enabled visual configuration.
 
-The following artifacts are intentionally excluded from Git:
-
-- model weights (`*.safetensors`, `*.pth`, `*.pt`, `*.ckpt`);
-- tokenizer vocabulary/model files;
-- downloaded Hugging Face or Torch Hub caches;
-- generated caches such as `__pycache__/`.
-
-Supply the required checkpoint and tokenizer assets locally before running an experiment. See the repository README for the expected layout and command-line arguments.
+No pretrained weights, tokenizer assets, downloaded caches, or generated artifacts are tracked. Supply those files locally before running an experiment.
